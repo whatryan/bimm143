@@ -1,0 +1,144 @@
+---
+title: "Class 5: Data Visualization"
+author: "Ryan (PID: A15848050)"
+format: html
+---
+
+# Base R graphics vs ggplot2
+
+There are many graphics systems available in R, including so-called "base" R graphics and the very popular **ggplot2** package.
+
+To compare these let's play with the inbuilt `cars` dataset.
+
+```{r}
+head(cars, 3)
+```
+
+To use "base" R I can simply call the `plot()` function
+
+```{r}
+plot(cars)
+```
+
+To use `ggplot2` I first need to install it using hte function `install.packages("ggplot2")`. 
+
+I will run this in my R console as I do not want to re-install it every time I render my report
+
+The main function in this package is called `ggplot()`. Can I just call it? (nah -- need to load it w/ `library()`)
+
+```{r}
+library(ggplot2)
+ggplot()
+```
+
+To make a figure with ggplot I always need at least 3 things:
+
+- **data** (i.e. what I want to plot)
+- **aes** (the aesthetics mapping of the data to the plot I want.)
+- **geom** (the geoms i.e. How I want to plot the data)
+```{r}
+#the first row data= ... not needed 
+ggplot(data = cars) + 
+  aes(x = speed, y = dist) +
+  geom_point() 
+```
+If I want to add more things I can just keep adding layers 
+
+```{r} 
+
+ggplot(data = cars) + 
+  aes(x = speed, y = dist) +
+  geom_point() + 
+  geom_smooth() 
+```
+
+GGplot is much more verbose than base R plots for standard plots but it has a consistent layer system that I can use to make just about any plot
+
+Now do the plot with a straight line fit and no standard error
+
+```{r}
+ggplot(data = cars) + 
+  aes(x = speed, y = dist) +
+  geom_point() +
+  geom_smooth ( se = F, method = lm) +
+  labs( title = "Stopping Distance vs Speed for old cars", subtitle = "From the inbuilt cars dataset ", caption = "BIMM143", x = "Speed (MPH)", y = "Stopping Distance (ft)") + 
+  theme_bw()
+```
+
+
+##A more complicated plot
+
+Let's plot some gene expression data.
+
+
+```{r}
+url <- "https://bioboot.github.io/bimm143_S20/class-material/up_down_expression.txt"
+genes <- read.delim(url)
+head(genes)
+```
+
+
+
+> How can we summarize the last column "State"?
+
+```{r}
+table(genes$State)
+```
+
+>Plot it out 
+
+```{r}
+p<- ggplot(genes) +
+  aes(x = Condition1, y = Condition2, col = State) +
+  geom_point() 
+
+```
+
+I can just call `p` when I want to plot or add to it
+```{r}
+p + 
+  labs(title = "Gene Expression Levels after Drug Treatment", x = "Control", y = "Drug Treated") + 
+  scale_color_manual( values = c("blue", "grey", "red"))
+```
+
+
+##Gapminder dataset
+
+```{r}
+# File location online
+url <- "https://raw.githubusercontent.com/jennybc/gapminder/master/inst/extdata/gapminder.tsv"
+
+gapminder <- read.delim(url)
+head(gapminder)
+summary(gapminder)
+```
+
+>plot life expectancy vs gdp
+
+```{r}
+ggplot(gapminder) +
+  aes( x = gdpPercap, y = lifeExp, col = continent, size = pop) +
+  geom_point(alpha = 0.3) 
+```
+
+###A very useful layer to add sometimes is for "facetting" 
+
+```{r}
+ggplot(gapminder) +
+  aes( x = gdpPercap, y = lifeExp, col = continent, size = pop) +
+  geom_point(alpha = 0.3) +
+  facet_wrap(~continent)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

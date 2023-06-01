@@ -1,0 +1,132 @@
+---
+title: "Class10: Structural Bioinformatics pt2"
+author: "Ryan Chung A15848050"
+format: html
+---
+
+```{r}
+library(bio3d)
+library(ggplot2)
+library(BiocManager)
+```
+
+
+>Q10: Which of the packages above is found only on BioConductor and not CRAN?
+
+the `msa` package
+
+>Q11: Which of the above packages is not found on BioConductor or CRAN?
+
+the `bitbucket`
+
+>Q12: True or False? Functions from the devtools package can be used to install packages from GitHub and BitBucket?
+
+TRUE
+
+
+#Comparative analysis of ADK 
+
+ADK is an important drug target and we would love to know how it works - i.e. molecular mechanisms
+
+There has been lots of work done on thsi protein due to its importance including lots of crystal structures
+
+We will begin with getting an example ADK seq from the data base.
+We will then use this to find all ADK structures in the PDB
+
+```{r}
+aa <- get.seq('1ake_A')
+aa
+```
+>Q13: How many amino acids are in this sequence?
+
+214 amino acids
+
+
+We will now run BLAST with this sequence
+```{r}
+#Running this code multiple times will prob get ur IP blocked by the feds, if so reconnect to wifi and redo
+  # IT WILL RERUN EVERYTIME YOU RENDER THE DOCUMENT
+#b <- blast.pdb(aa)
+```
+
+```{r}
+#hits <- plot(b)
+#evalue is in -log bc we want to make the good results (tiny e-value) at the top so its easier to see. -log kinda flips the axis so small things at the top
+```
+
+Let's see what is in our `hits` object
+
+```{r}
+#hits
+
+#hits$pdb.id
+```
+
+###Align and superpose structures
+```{r}
+#this is alternative thing to put so we don't get ip blocked when rendering + so the document still works
+hits <- NULL
+hits$pdb.id <- c('1AKE_A','6S36_A','6RZE_A','3HPR_A','1E4V_A','5EJE_A','1E4Y_A','3X2S_A','6HAP_A','6HAM_A','4K46_A','3GMT_A','4PZL_A')
+
+```
+
+Now we can download all these PDB structure files
+```{r}
+
+files <- get.pdb(hits$pdb.id, path="pdbs", split=TRUE, gzip=TRUE)
+  #Path = directory left blank = goes into proj directory, split = split by chains if true
+```
+
+Now I want to align and superimpose these structures which are all over the place
+
+```{r}
+pdbs <- pdbaln(files, fit = TRUE, exefile="msa")
+```
+
+Let's have a look at our `pdbs` object:
+
+```{r}
+pdbs
+```
+
+Now we have our aligned and superposed structures we can perform all sorst of analysis on them. Let's do PCA...
+
+```{r}
+pc.xray <- pca(pdbs)
+plot(pc.xray)
+
+#PC2 v PC1 has 3 clusters - means there are 3 main types of structures - prof
+
+
+```
+
+Results of PCA on ADK X-ray structures. Each dot represents one PDB structure. 
+
+We can cluster the structures by RMSD (or any other method).
+
+```{r}
+rd <- rmsd(pdbs)
+rd
+
+hc.rd <- hclust(dist(rd))
+grps <- cutree(hc.rd, k=3)
+cutree(hc.rd, k = 3)
+plot(pc.xray, 1:2, col="grey50", bg=grps, pch=21, cex=1)
+
+plot(pc.xray, 1:2, col = grps)
+```
+
+### Optional Further Visualization
+
+We can make a wee movie - also called a trajectory of the major differences (i.e. structural displacements) of ADK
+```{r}
+#visualize first component
+pc1 <- mktrj(pc.xray, pc=1, file="pc_1.pdb")
+```
+
+
+
+
+
+
+

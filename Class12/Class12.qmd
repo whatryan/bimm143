@@ -1,0 +1,253 @@
+---
+title: "Class12 Transcriptomics and RNA-Seq data"
+author: "Ryan Chung A15848050"
+format: html
+---
+
+```{r}
+#| echo:false 
+
+#library(BiocManager)
+#library(DESeq2)
+
+```
+
+Here we will use the DeSeq2 package for RNASeq analysis the data comes from a studty (Himes et al. 2014) on airway smooth muscle cells treated with steroids.
+
+# Importing countData and colData
+
+We need two things for this analysis:
+- **countData** (counts for every transcript/gene)
+- **ColData** (metadata that describes experimental setup)
+
+```{r}
+countData <- read.csv("airway_scaledcounts.csv", row.names=1)
+head(countData)
+metadata <-  read.csv("airway_metadata.csv")
+metadata
+
+```
+
+>Q1. How many genes are in this dataset? 
+
+```{r}
+nrow(countData)
+```
+
+38694 genes
+
+>Q2. How many 'control' cell lines do we have?
+
+```{r}
+table(metadata$dex)
+
+#another method
+metadata$dex == 'control' #gives u T/F values
+sum(metadata$dex == 'control') #actually gives the number 
+```
+
+There are 4 control cell lines
+
+
+# Toy differential gene expression
+
+- Step 1/
+Calculate the mean of the control samples (i.e. columns in countData)
+Calculate the mean of the treated samples
+
+(a) We need to find which columns in countData in "control" samples
+  - look in the metadata - our colData(metadata) dex column
+
+#### Calculating the control treatment means
+LAB SHEET WAY - double pound = code, single = comments
+```{r}
+#[r,c]
+#index metadata for all rows where dex = control store as control 
+
+##control <- metadata[metadata[ ,"dex" ]  == 'control',] 
+
+#now index the control count data by using the control ID's from the metadata
+
+##control.counts <- countData[ ,control$id]
+##head(countData[ ,control$id])
+
+#take the mean of each treatment 
+##control.mean <- rowSums( control.counts )/4 
+
+##head(control.mean)
+```
+
+IN CLASS WAY
+
+```{r}
+control.inds <- metadata$dex == 'control'
+
+```
+
+(b) Extract all the control columns from `countData` nad call it `control.counts`
+```{r}
+
+control.counts <- countData [ , control.inds]
+```
+
+(c)
+ Calculate the mean value across the rows of `control.counts` i.e. calculate the mean count values for each gene in the control samples
+ 
+```{r}
+control.means <- rowMeans(control.counts)
+head(control.means)
+```
+ 
+
+
+>Q3. How would you make the above code in either approach more robust?
+
+I would condense the calculating mean code into a function in a way where I can calculate means for both treatment and controls.
+
+>Q4. Follow the same procedure and calculate the treatment means
+
+#### Calculating treatment means
+
+(a) Index for treatment
+```{r}
+treat.inds <-  metadata$dex == 'treated'
+```
+
+(b) Extract treatment columns
+```{r}
+treat.counts <- countData[ ,treat.inds]
+```
+
+(c) take the mean values across the rows
+```{r}
+treat.means <- rowMeans(treat.counts)
+head(treat.means)
+```
+
+
+Store the means for book keeping.
+```{r}
+
+meancounts <- data.frame(control.means,treat.means )
+
+```
+>Q5. Create a scatter plot of the means using base R and ggplot
+
+See below
+
+>Q6 Plot both axes on a log scale
+
+See below
+
+```{r}
+library(ggplot2)
+plot(meancounts, log = 'xy')
+
+ggplot(meancounts)+
+  aes(control.means, treat.means) +
+  geom_point() +
+  scale_x_log10() + 
+  scale_y_log10()
+```
+
+We can use log transforms for skewed data and because we care more about relative changes in magnitude
+
+We most often use log2 as our transform as themath is easier to interpret htan log10
+
+If we have no change - i.ie. same values in control and treated we will have a log2 value of 0
+```{r}
+
+(20/20)
+
+log2(20/20) #if same values = 0
+
+log2(20/10) # if decrease after treatment = +1 pos value log2 fold-change of +1 if double the amount
+
+log2(10/20) # if increase after treatment = -1 neg value
+
+log2(40/10) # two fold change 
+```
+
+
+```{r}
+
+meancounts$log2fc <- log2(meancounts$treat.means/meancounts$control.means)
+head(meancounts)
+
+```
+>Q: How many genes are up regulated at the common threshold of +2 log2FC values
+
+Use the tables through excluding na/inf values 
+```{r}
+table(meancounts$log2fc >= 2)
+sum(meancounts$log2fc >= 2, na.rm = TRUE)
+```
+
+Hold on what about stats! Yes these are big changes but are these changes significant?
+
+To do this properly we will turn into the DESeq2 package. 
+
+# DESeq2 analysis
+
+```{r}
+#| message: false
+library(DESeq2)
+```
+
+To use DESeq we need our input contData and colData in a specific format that DESeq wants:
+
+```{r}
+dds <- DESeqDataSetFromMatrix(countData = countData, 
+                       colData = metadata,
+                       design = ~dex)
+
+```
+
+To run the analysis I can now use the main DESeq2 function called `DESeq()` with `dds` as an input
+
+```{r}
+dds <- DESeq(dds)
+```
+
+To get the results out of this `dds` object we can use the `results()` function from the package
+```{r}
+res <- results(dds)
+head(res)
+#p adj is there bc 0.05 (5%) in our dataset of 38k observations is a decently big number
+#deseq uses benhamini and Hochberg method: 1) rank the genes by p-value 2) multiply each p value by total num of obs/rank
+```
+
+Volcano plot - log2FC vs PADJ
+
+Let's make a final (for today) plot of log2 fold change vs adjusted P-value
+
+```{r}
+
+plot(res$log2FoldChange, res$padj)
+#plot shows some skew 
+```
+
+It is the low P=values that we care about and these are lost in the skewed plot 
+above. Let's take the log of the $padj values for out plot
+
+```{r}
+plot(res$log2FoldChange, -log(res$padj))
+abline(v = c(+2,-2), col = 'red')
+abline(h = -log(0.05), col = 'red')
+
+#all points away from 0, x axis shows amount of change and y axis is as it goes higher it becomes more significant
+```
+
+Finally we can make a color vector to use in the polt to better highlight the genes we care about.
+
+```{r}
+mycols <-  rep("gray", nrow(res))
+mycols[abs(res$log2FoldChange) >= 2] <- 'red'
+mycols[res$padj > 0.05] <- 'gray'
+
+plot(res$log2FoldChange, -log(res$padj), col = mycols)
+abline(v = c(+2,-2), col = 'blue')
+abline(h = -log(0.05), col = 'blue')
+
+```
+

@@ -1,0 +1,16 @@
+---
+title: "Lab 11"
+format: html
+---
+>Q5: What proportion are homozygous G|G
+
+```{r}
+data <- read.csv('373531-SampleGenotypes-Homo_sapiens_Variation_Sample_rs8067378.csv')
+table(data$Genotype..forward.strand.)/sum(table(data$Genotype..forward.strand.))
+```
+
+```{r}
+gbr <- read.csv('373531-SampleGenotypes-Homo_sapiens_Variation_Sample_rs8067378 (1).csv')
+gbr
+```
+

@@ -1,0 +1,250 @@
+---
+title: "Class 7 : Clustering and PCA"
+author: "Ryan Chung PID A15848050"
+format: html
+---
+
+#Clustering First let's make up some data to cluster so we can get a feel for these methods and how to work with them
+
+We can use the `rnorm()` function to generate random numbers from a normal distribution centered around `mean`
+
+
+```{r}
+
+hist(rnorm(5000, mean = 3)) #histogram/data centered around mean value
+
+```
+
+Lets get 30 points with a mean of 3
+```{r}
+
+test <- c(rnorm(30, mean = 3), rnorm(30, mean = -3))
+
+#cbind,rev functions 
+
+```
+
+
+```{r}
+
+x <- cbind(x = test, y = rev(test))
+
+rev( (c(1:5)))
+
+plot(x)
+
+```
+
+##K-means clustering
+
+Very popular clustering method that we can use with the `kmeans()`
+ function in base R.
+```{r}
+#anything with an equal sign is not necessary ?
+#kmeans only needs an x, and centers arguement, centers - # of clusters or 'K'
+
+km <- kmeans(x, centers = 2)
+km
+
+```
+
+###kmean checkpoint questions
+>Q: Use the components to find out- Cluster size, cluster membership, and center
+
+```{r}
+
+km$size #Returns you cluster sizes - 30 points per cluster
+
+km$cluster #Returns cluster assignments
+
+km$centers #Returns the coordinates of your centers 
+
+```
+
+>Q: Plot x, colored by means cluster assignment, adding cluster centers as blue points
+
+```{r}
+
+mycols <- c(km$cluster)
+plot(x, col = mycols )
+points(km$centers, col = "blue", pch = 15 , cex = 2)
+
+```
+
+
+>Q: Let's cluster into 3 groups or same `x` data and make a plot
+
+```{r}
+km2 <- kmeans(x, centers = 4)
+plot(x , col = km2$cluster)
+points(km2$centers, col = "blue", pch = 18, cex = 2)
+
+#totss is the measure of spread --> make elbow plots, where more centers usually drops totss
+#scree plot = elbow plot, cause lower totss = better answer cause less spread (?)
+```
+
+
+##Hierarchical Clustering 
+
+We can use the `hclust()` function for hierarchical clustering. But unlike `kmeans()`,
+where we could pass in our data as input, we need to give `hclust()` a "distance matrix" which is produced by `dist()`.
+The `dist()` function gives euclidean distance (normal distance we know for x y distances).
+We will use the `dist()` function to start with
+
+```{r}
+
+d <- dist(x)
+hc <-  hclust(d)
+hc
+```
+
+
+```{r}
+
+plot(hc)
+
+```
+
+I can now "cut" my tree with the `cutree()`to yield a cluster membership vector.
+
+```{r}
+
+grps <- cutree(hc, h = 8) #h gives height of the cut 
+grps
+
+```
+
+You can also tell `cutree()` to cut where it yields "k" number of groups 
+
+```{r}
+
+cutree(hc, k = 2)
+
+```
+
+```{r}
+
+plot(x, col = grps )
+
+
+```
+
+# Principal Component Analysis (PCA)
+
+```{r}
+
+url <- "https://tinyurl.com/UK-foods"
+y <- read.csv(url) #(url, row.names = 1)
+
+str(y)
+
+nrow(y)
+ncol(y)
+dim(y)
+```
+
+We have 17 rows and 5 columns 
+
+>Q preview the first 6 rows
+
+```{r}
+
+head(y)
+```
+
+###minus indexing
+```{r}
+
+rownames(y) <- y[ , 1]
+head(y)
+y <- y[ , -1] # this will remove the first column every single time you run this code (kinda bad), instead use row.names = 1 while reading the csv in to avoid this
+head(y)
+dim(y)
+
+```
+
+>Q2 Which approach to solving the ‘row-names problem’ mentioned above do you prefer and why? Is one approach more robust than another under certain circumstances?
+
+I prefer the `row.names()` approach becauses I am liable to change and rerun my code many different times and I would likely end up with an empty dataframe.
+
+```{r}
+
+barplot(as.matrix(y), beside=T, col=rainbow(nrow(y)))
+
+```
+
+>Q3 Changing what optional argument in the above barplot() function results in the following plot?
+
+```{r}
+
+barplot(as.matrix(y), beside=F, col=rainbow(nrow(y)))
+
+
+```
+
+Changing the beside arguement to False gives us the vertical plot.
+
+>Q5:Generating all pairwise plots may help somewhat. Can you make sense of the following code and resulting figure? What does it mean if a given point lies on the diagonal for a given plot?
+
+```{r}
+
+pairs(y, col = rainbow(10), pch = 16)
+
+
+#reading: L-R = england is y axis, up-down = x axis if the two compared are the same, then they would be diagonal lines in that plot
+```
+
+>Q6: What is the main differences between N. Ireland and the other countries of the UK in terms of this data-set?
+
+The blue, orange, and cyan categories are the main differences between N. Ireland and the other countries just from a visual standpoint.
+
+
+###using the `prcomp()` function
+```{r}
+#`t()` gives you the transposed stuff (?) idk wat do
+pca <-prcomp(t(y))
+summary(pca)
+
+```
+
+```{r}
+attributes(pca)
+```
+
+pca$x
+
+>Q7:  Complete the code below to generate a plot of PC1 vs PC2. The second line adds text labels over the data points.
+
+```{r}
+
+plot(pca$x[ ,1], pca$x[ ,2], xlab = "PC1", ylab = "PC2", xlim = c(-270, 500))
+text(pca$x[ ,1], pca$x[ ,2], colnames(y))
+
+```
+
+>Q8:  Customize your plot so that the colors of the country names match the colors in our UK and Ireland map and table at start of this document.
+
+```{r}
+
+plot(pca$x[ ,1], pca$x[ ,2], xlab = "PC1", ylab = "PC2", xlim = c(-270, 500))
+text(pca$x[ ,1], pca$x[ ,2], colnames(y), col = c("red", "orange", "blue", "green"))
+
+```
+
+>Q9: Generate a similar ‘loadings plot’ for PC2. What two food groups feature prominantely and what does PC2 maninly tell us about?
+
+```{r}
+
+
+
+```
+
+
+
+
+
+
+
+
+
+

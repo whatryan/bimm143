@@ -1,0 +1,166 @@
+---
+title: "Class 09: Structural Bioinformatics"
+author: "Ryan Chung A15848050"
+format: html
+---
+
+### Section 1 - Intro to RCSB Protein Data Bank (PDB)
+
+```{r}
+
+pdb <- read.csv('Data_Export_Summary.csv')
+
+```
+
+> Q1: What percentage of structures in the PDB are solved by X-Ray and Electron Microscopy.
+
+92.99% of structures in the PDB are solved by X-Ray and Electron Microscopy with each making up approximate 86 and 7% respectively.
+
+```{r}
+
+#xray <- sum(154766, 9083, 8110, 2664, 163, 11)
+#em <- sum(10155, 1802, 3176, 94, 9 ,0 )
+#total <- sum(177403, 10925, 11575, 4223, 204, 22)
+
+#(xray + em )/ total
+
+ 
+xtot <- sum(as.numeric(gsub(',', '' , pdb$X.ray)))
+
+etot <- sum(as.numeric(gsub(',','',pdb$EM))) 
+
+ttot <- sum(as.numeric(gsub(',','', pdb$Total)))
+
+(xtot + etot)/ttot
+
+```
+
+Make this a function
+
+```{r}
+
+tot <- function(z) {
+  #Take inuput z and remove commas
+    #then make it numeric and then take the sum
+  #Save the sum as y
+  y <- sum(as.numeric(gsub(',', '', z)))
+  #return output
+  return(y)
+}
+  
+Q1 <- 100* (tot(pdb$X.ray) + tot(pdb$EM)) / tot(pdb$Total)
+
+
+xprop <- round(tot(pdb$X.ray) / tot(pdb$Total), 2)
+
+eprop <- round(tot(pdb$EM) / tot(pdb$Total), 2)
+
+```
+
+> Q2: What proportion of structures in the PDB are protein?
+
+86.81% of structures in the PDB are protein (only).
+
+```{r}
+
+rmcomma <- function(input){
+ input <- as.numeric(gsub(',','', input))
+}
+  
+pdb$Total <- as.numeric(gsub(',', '',pdb$Total))
+
+prot <- sum(pdb$Total[1])
+
+prot/sum(pdb$Total)
+
+
+```
+
+> Q3: Type HIV in the PDB website search box on the home page and determine how many HIV-1 protease structures are in the current PDB?
+
+There are 239 HIV-1 protease structures in the current PDB.
+
+### Part 2 - Visualizing the HIV-1 protease structure
+
+![HIV-PR Structure from MERK with a bound drug](1HSG(1).png)
+
+> Q4: Water molecules normally have 3 atoms. Why do we see just one atom per water molecule in this structure?
+
+The hydrogen molecules are extremely small and are not rendered due to the low resolution representation,
+
+> Q5: There is a critical "conserved" water molecule in the binding site. Can you identify this water molecule? What residue number does this water molecule have
+
+The molecule is HOH 308.
+
+### Part 3 - Introduction to Bio3D in R
+
+##### Working with Structures in R
+
+We can use the `bio3d` package to read and perform bioinformativcs calculations on PDB structures
+
+```{r}
+
+library(bio3d)
+
+hsg <- read.pdb("1hsg")
+hsg
+```
+
+```{r}
+attributes(hsg)
+```
+
+
+```{r}
+head(hsg$atom)
+```
+
+#### Part 4 - Comparative structure analysis of Adenylate Kinase
+
+```{r}
+adk <- read.pdb('6s36')
+
+```
+
+Perform a prediction of flexibility with a technique called NMA (normal mode analysis)
+
+```{r}
+#perform a flexibility prediction
+m <- nma(adk)
+
+plot(m)
+```
+
+Write out a 'movie' (a.k.a trajectory) of the motion for viewing in MOlstar
+```{r}
+
+mktrj(m, file="adk_m7.pdb")
+
+```
+
+
+
+>Q7: How many amino acid residues are there in this pdb object? 
+
+198
+
+>Q8: Name one of the two non-protein residues? 
+
+HOH
+
+>Q9: How many protein chains are in this structure? 
+
+2 protein chains
+
+
+
+
+
+
+
+
+
+
+
+
+
