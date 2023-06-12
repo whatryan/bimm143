@@ -1,5 +1,6 @@
 
 theme: minima
+title: Ryan's BIMM143 Website :)
 ## Bioinformatics class
 
 This repo is for my UCSD bioinformatics class.
