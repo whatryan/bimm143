@@ -1,0 +1,51 @@
+---
+title: "Find a Gene"
+author: "Ryan"
+format: html
+---
+
+```{r}
+library(bio3d)
+```
+
+read in fasta
+
+```{r}
+align <- read.fasta('alignment.fst')
+```
+
+```{r}
+#make the identity matrix
+idm <- seqidentity(align)
+```
+
+```{r}
+library(ggplot2)
+library(reshape2)
+
+m_data <- melt(idm)
+
+hmap <- ggplot( data = m_data,
+        aes( x= Var1, y = Var2, fill = value)) 
+hmap + geom_tile() +
+  scale_fill_gradient( low = 'yellow', high = 'red') +
+  labs(title = "Sequence identity based heatmap")
+
+```
+
+
+```{r}
+#Generating a consensu sequence from alignment 
+consensus <- consensus(align$ali)
+#consensus has so many gaps, find the highest seq identity and use that to search 
+
+row_max <- apply(idm, 1, max)
+
+which.max(row_max)
+```
+
+
+
+
+
+
