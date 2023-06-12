@@ -256,7 +256,7 @@ Reese's Miniatures
 
 >Q20. What are the top 5 most expensive candy types in the dataset and of these which is the least popular?
 
-Nik L Nip, Nestle Smarties, Ring pops, Hershey's krack and Milk chocolate, with the Nik L Nip being the least popular
+Nik L Nip, Nestle Smarties, Ring pops, Hershey's krack and Milk chocolate, with the Nik L Nip being the least popular. 
 
 ```{r}
 
